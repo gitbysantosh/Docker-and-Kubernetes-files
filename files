@@ -1,0 +1,288 @@
+DOCKER FILE:
+
+EX-1:
+
+FROM ubuntu
+RUN apt update -y
+RUN apt install apache2 maven tree -y
+RUN touch file{1..10}
+
+EX-2:
+
+FROM ubuntu
+RUN apt update -y
+RUN apt install apache2 maven tree -y
+RUN touch file{1..10}
+CMD apt install mysql-server -y
+
+
+EX-3:
+
+FROM ubuntu
+RUN apt update -y
+RUN apt install apache2 maven tree -y
+RUN touch file{1..10}
+COPY santosh.txt /tmp
+ADD http://dlcdn.apache.org/tomcat/tomcat-9/v9.0.78/bin/apache-tomcat-9.0.78.tar.gz /tmp
+
+
+EX-4:
+FROM ubuntu
+RUN apt update -y
+RUN apt install apache2 maven tree -y
+RUN touch file{1..10}
+COPY santosh.txt /tmp
+ADD http://dlcdn.apache.org/tomcat/tomcat-9/v9.0.78/bin/apache-tomcat-9.0.78.tar.gz /tmp
+WORKDIR /tmp
+LABEL author santosh kumar
+ENV client swiggy
+ENV server Prod
+
+
+NETFLIX DEPLOYMENT:
+yum install git -y
+git clone https://github.com/CleverProgrammers/pwj-netflix-clone.git
+cd pwj-netflix-clone/
+vim Dockerfile
+
+FROM ubuntu
+RUN apt-get update -y
+RUN apt-get install apache2 -y
+COPY . /var/www/html/
+CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
+
+
+docker build -t netflix:v1 .
+docker run -itd --name netflix1 -p 81:80 netflix:v1
+_________________________
+
+DOCKER VOLUMES FILES
+
+FROM ubuntu
+VOLUME ["/vol1"]
+
+
+docker build -t raham:v1 .
+docker run -it --name cont1 raham:v1
+cd /vol1
+touch file{1..10}
+
+to share the vol: docker run -it --name cont2 --volumes-from cont1 --privileged=true ubuntu
+
+
+2. FROM CLI:
+
+docker run -it --name cont3 -v /vol2 ubuntu
+cd /vol2
+touch file{1..10}
+to share the vol: docker run -it --name cont4 --volumes-from cont3 --privileged=true ubuntu
+
+
+3. MOUNTING:
+
+docker volume create vol3
+docker volume ls
+docker volume inspect vol3
+docker volume rm vol4
+
+cd /var/lib/docker/volumes/vol3/_data
+touch file{1..10}
+
+docker run -it --name cont5 --mount source=vol3,destination=/abc ubuntu
+cd /vol3
+touch file{11..20}
+exit
+
+cp * /root	: to copy files from volume path to local path
+
+NOTE: we cant delete attached volume.
+____________________
+DOCKER COMPOSE
+
+version: '3.8'
+services:
+  movies:
+    image: santosh:movies
+    ports:
+      - "81:80"
+  train:
+    image: santosh:train
+    ports:
+      - "82:80"
+
+
+
+version: '3.8'
+services:
+  movies:
+    image: santosh:movies
+    ports:
+      - "81:80"
+  train:
+    image: santosh:train
+    ports:
+      - "82:80"
+  dth:
+    image: santosh:dth
+    ports:
+      - "83:80"
+  recharge:
+    image: santosh:recharge
+    ports:
+      - "84:80"
+_________________________________________________________________________________________________________________________
+
+KUBERNETES
+
+REPLICASET:
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  labels:
+    app: swiggy
+  name: swiggy-rs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: swiggy
+  template:
+    metadata:
+      labels:
+        app: swiggy
+    spec:
+      containers:
+      - name: cont1
+        image: nginx
+___________________________
+DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: swiggy
+  name: swiggy-rs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: swiggy
+  template:
+    metadata:
+      labels:
+        app: swiggy
+    spec:
+      containers:
+      - name: cont1
+        image: nginx
+_________________
+KUNERNETES SERVICES
+1.CLUSTERIP:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: swiggy
+  name: swiggy-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: swiggy
+  template:
+    metadata:
+      labels:
+        app: swiggy
+    spec:
+      containers:
+      - name: cont1
+        image: santoshmudhili/moviespaytm:latest
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sv1
+spec:
+  type: ClusterIP
+  selector:
+    app: swiggy
+  ports:
+    - port: 80
+_____________
+2.NODEPORT:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: swiggy
+  name: swiggy-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: swiggy
+  template:
+    metadata:
+      labels:
+        app: swiggy
+    spec:
+      containers:
+      - name: cont1
+        image: santoshmudhili/trainservice:latest
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: abc
+spec:
+  type: NodePort
+  selector:
+    app: swiggy
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 31111
+________________
+3.LOADBALACER:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: swiggy
+  name: swiggy-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: swiggy
+  template:
+    metadata:
+      labels:
+        app: swiggy
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/trainservice:latest
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: abc
+spec:
+  type: LoadBalancer
+  selector:
+    app: swiggy
+  ports:
+    - port: 80
+      targetPort: 80
+------------
+
+
